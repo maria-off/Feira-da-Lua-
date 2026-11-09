@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Feira da Lua — Controle Financeiro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:#0b0e1a; --bg2:#111527; --card:#161b31; --card2:#1c2240;
+    --line:#2a3154; --text:#eef0f8; --muted:#8b93b5;
+    --gold:#f5c76a; --gold2:#e0a83e; --violet:#8b7cf6;
+    --green:#4ade80; --red:#f87171; --blue:#60a5fa;
+    --radius:16px; --shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  * { box-sizing:border-box; margin:0; padding:0 }
+  body {
+    font-family:'Inter', system-ui, sans-serif;
+    background:
+      radial-gradient(1200px 600px at 80% -10%, #1b2140 0%, transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, #1a1533 0%, transparent 55%),
+      var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  button { font-family:inherit; cursor:pointer; border:none }
+  input, select { font-family:inherit }
+  .hidden { display:none !important }
+
+  /* ===== CARREGANDO CÓSMICO ===== */
+  #loading {
+    position:fixed; inset:0; z-index:500; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:20px;
+    background:radial-gradient(circle at 50% 40%, #171d38, #0b0e1a 70%);
+  }
+  #loading .moon-big {
+    width:80px; height:80px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #ffe9b0, #f5c76a 60%, #d99a2b);
+    box-shadow:0 0 60px rgba(245,199,106,.55);
+    animation:pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{ transform:scale(1) } 50%{ transform:scale(1.06) } }
+  #loading h1 { font-family:'Space Grotesk', sans-serif; font-size:28px; letter-spacing:1px }
+  #loading p { color:var(--muted); font-size:14px }
+  .bar { width:260px; height:6px; border-radius:20px; background:#222a49; overflow:hidden }
+  .bar span { display:block; height:100%; width:0%; border-radius:20px; background:linear-gradient(90deg, var(--gold), var(--violet)); transition:width .3s ease }
+  #loading .pct { color:var(--gold); font-weight:600; font-size:13px }
+
+  /* ===== LOGIN ===== */
+  #login { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px }
+  .login-card { background:var(--card); border:1px solid var(--line); border-radius:24px; padding:40px; width:100%; max-width:400px; box-shadow:var(--shadow) }
+  .logo { display:flex; align-items:center; gap:12px; margin-bottom:8px }
+  .logo .moon { width:44px; height:44px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #ffe9b0, #f5c76a 60%, #d99a2b); box-shadow:0 0 24px rgba(245,199,106,.5) }
+  .logo h1 { font-family:'Space Grotesk', sans-serif; font-size:22px; font-weight:700 }
+  .logo p { color:var(--muted); font-size:13px }
+  .login-card h2 { font-size:20px; margin:24px 0 4px }
+  .login-card .sub { color:var(--muted); font-size:14px; margin-bottom:24px }
+  .field { margin-bottom:16px }
+  .field label { display:block; font-size:13px; color:var(--muted); margin-bottom:6px; font-weight:500 }
+  .field input, .field select {
+    width:100%; background:var(--bg2); border:1px solid var(--line); border-radius:12px;
+    padding:12px 14px; color:var(--text); font-size:15px; outline:none; transition:.15s;
+  }
+  .field input:focus, .field select:focus { border-color:var(--gold); box-shadow:0 0 0 3px rgba(245,199,106,.15) }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:12px 18px; border-radius:12px; font-weight:600; font-size:14px; transition:.15s }
+  .btn-primary { background:linear-gradient(135deg, var(--gold), var(--gold2)); color:#1a1206 }
+  .btn-primary:hover { filter:brightness(1.08); transform:translateY(-1px) }
+  .btn-ghost { background:transparent; border:1px solid var(--line); color:var(--text) }
+  .btn-ghost:hover { background:var(--card2) }
+  .btn-danger { background:rgba(248,113,113,.12); color:var(--red) }
+  .btn-danger:hover { background:rgba(248,113,113,.2) }
+  .btn-green { background:rgba(74,222,128,.14); color:var(--green) }
+  .btn-green:hover { background:rgba(74,222,128,.22) }
+  .btn-sm { padding:8px 12px; font-size:13px; border-radius:10px }
+  .btn-block { width:100% }
+  .login-hint { margin-top:16px; font-size:12px; color:var(--muted); text-align:center }
+
+  /* ===== OLHINHO ===== */
+  .pass-wrap { position:relative }
+  .pass-wrap input { padding-right:44px }
+  .toggle-pass { position:absolute; right:6px; top:50%; transform:translateY(-50%); background:transparent; color:var(--muted); padding:8px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center }
+  .toggle-pass:hover { color:var(--gold); background:var(--card2) }
+  .toggle-pass svg { width:20px; height:20px }
+
+  /* ===== CASCA ===== */
+  #app { display:flex; min-height:100vh }
+  .sidebar { width:240px; background:var(--bg2); border-right:1px solid var(--line); padding:24px 16px; display:flex; flex-direction:column; gap:8px; position:sticky; top:0; height:100vh }
+  .sidebar .logo { margin-bottom:16px; padding:0 8px }
+  .nav-item { display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:12px; color:var(--muted); font-weight:500; font-size:14px; background:transparent; text-align:left; width:100% }
+  .nav-item:hover { background:var(--card2); color:var(--text) }
+  .nav-item.active { background:linear-gradient(135deg, rgba(245,199,106,.15), rgba(224,168,62,.08)); color:var(--gold); font-weight:600 }
+  .nav-item svg { width:20px; height:20px; flex-shrink:0 }
+  .sidebar .spacer { flex:1 }
+  .sidebar .logout { color:var(--muted) }
+  .sidebar .logout:hover { color:var(--red); background:rgba(248,113,113,.1) }
+  .main { flex:1; padding:32px; max-width:1100px; margin:0 auto; width:100% }
+  .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:16px }
+  .page-header h2 { font-family:'Space Grotesk', sans-serif; font-size:26px; font-weight:700 }
+  .page-header .desc { color:var(--muted); font-size:14px; margin-top:4px }
+  .rel-title { font-family:'Space Grotesk', sans-serif; font-size:22px; margin-bottom:4px }
+  .rel-sub { color:var(--muted); font-size:14px; margin-bottom:20px }
+
+  .card { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:24px; box-shadow:var(--shadow) }
+  .metrics { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:16px; margin-bottom:24px }
+  .metric { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:20px }
+  .metric .label { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; font-weight:600 }
+  .metric .value { font-family:'Space Grotesk', sans-serif; font-size:26px; font-weight:700; margin-top:8px }
+  .metric .hint { font-size:11px; color:var(--muted); margin-top:6px; line-height:1.4 }
+  .metric .value.gold { color:var(--gold) }
+  .metric .value.green { color:var(--green) }
+  .metric .value.red { color:var(--red) }
+  .metric .value.blue { color:var(--blue) }
+
+  .table-wrap { overflow-x:auto }
+  table { width:100%; border-collapse:collapse; font-size:14px }
+  th { text-align:left; color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.5px; font-weight:600; padding:12px 14px; border-bottom:1px solid var(--line) }
+  td { padding:14px; border-bottom:1px solid var(--line) }
+  tr:last-child td { border-bottom:none }
+  tr:hover td { background:rgba(255,255,255,.02) }
+  .badge { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600 }
+  .badge.pix { background:rgba(96,165,250,.15); color:var(--blue) }
+  .badge.dinheiro { background:rgba(74,222,128,.15); color:var(--green) }
+  .badge.presente { background:rgba(74,222,128,.15); color:var(--green) }
+  .badge.falta { background:rgba(248,113,113,.15); color:var(--red) }
+  .badge.pendente { background:rgba(245,199,106,.15); color:var(--gold) }
+  .icon-btn { background:transparent; color:var(--muted); padding:6px; border-radius:8px; display:inline-flex }
+  .icon-btn:hover { background:var(--card2); color:var(--text) }
+  .icon-btn.danger:hover { color:var(--red) }
+  .icon-btn svg { width:18px; height:18px }
+  .mini-stats { display:flex; flex-wrap:wrap; gap:20px; margin-bottom:16px; font-size:13px; color:var(--muted) }
+  .mini-stats b { color:var(--text) }
+  .mini-stats .g { color:var(--green) }
+  .mini-stats .r { color:var(--red) }
+  .mini-stats .bl { color:var(--blue) }
+  .mini-stats .go { color:var(--gold) }
+
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; padding:24px; z-index:100 }
+  .modal { background:var(--card); border:1px solid var(--line); border-radius:20px; padding:28px; width:100%; max-width:480px; max-height:90vh; overflow-y:auto; box-shadow:var(--shadow) }
+  .modal h3 { font-family:'Space Grotesk', sans-serif; font-size:20px; margin-bottom:20px }
+  .modal .actions { display:flex; gap:12px; justify-content:flex-end; margin-top:24px }
+  .row { display:flex; gap:12px }
+  .row .field { flex:1 }
+  .seg { display:flex; gap:8px }
+  .seg button { flex:1; padding:10px; border-radius:10px; background:var(--bg2); border:1px solid var(--line); color:var(--muted); font-weight:600; font-size:13px }
+  .seg button.on { background:rgba(245,199,106,.15); border-color:var(--gold); color:var(--gold) }
+  .empty { text-align:center; padding:48px 24px; color:var(--muted) }
+  .empty .big { font-size:40px; margin-bottom:12px }
+  .empty p { font-size:14px }
+  .toast { position:fixed; bottom:24px; right:24px; background:var(--card2); border:1px solid var(--line); padding:14px 20px; border-radius:12px; font-size:14px; box-shadow:var(--shadow); z-index:600; animation:slideIn .25s ease }
+  @keyframes slideIn { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:none } }
+  .footer { margin-top:32px; padding-top:20px; border-top:1px solid var(--line); text-align:center; color:var(--muted); font-size:12px }
+
+  /* ===== MATRIZ (PLANILHA) ===== */
+  .matrix-wrap {
+    max-height: 600px;
+    overflow: auto;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--bg2);
+  }
+  .matrix-table th, .matrix-table td {
+    border: 1px solid var(--line);
+    padding: 8px 6px;
+    text-align: center;
+    white-space: nowrap;
+    font-size: 11px;
+    min-width: 80px;
+  }
+  /* Fixar a primeira coluna */
+  .matrix-table th:first-child, .matrix-table td:first-child {
+    position: sticky;
+    left: 0;
+    background: var(--card);
+    z-index: 2;
+    text-align: left;
+    min-width: 150px;
+    border-right: 2px solid var(--line);
+    font-size: 13px;
+  }
+  /* Fixar o cabeçalho */
+  .matrix-table thead th {
+    position: sticky;
+    top: 0;
+    background: var(--card2);
+    z-index: 3;
+    color: var(--gold);
+  }
+  .matrix-table thead th:first-child {
+    z-index: 4;
+  }
+  
+  /* Cores das Células (baseado na imagem do Excel) */
+  .mx-pago { background: #2e7d32; color: #fff; font-weight: 700; } /* Verde escuro */
+  .mx-pendente { background: #ffe600; color: #000; font-weight: 700; } /* Amarelo */
+  .mx-cancelado { background: #d32f2f; color: #fff; font-weight: 700; } /* Vermelho */
+  .mx-cyan { background: #00bcd4; color: #000; font-weight: 700; } /* Ciano (valores pagos) */
+  .mx-falta { background: #222; color: #555; font-style: italic; } /* Cinza escuro */
+  .mx-atestado { background: #9e9e9e; color: #000; font-weight: 700; }
+  
+  /* Rodapé com totais */
+  .matrix-table tfoot td {
+    position: sticky;
+    bottom: 0;
+    background: var(--card2);
+    font-weight: 700;
+    z-index: 3;
+    border-top: 2px solid var(--line);
+  }
+  .matrix-table tfoot td:first-child {
+    z-index: 4;
+  }
+  .mx-total-label { font-size: 10px; color: var(--muted); font-weight: normal; margin-top: 2px; }
+
+  @media print {
+    body { background:#fff; color:#000 }
+    .sidebar, .no-print, .btn, .icon-btn, .modal-overlay, .toast, #loading, .matrix-wrap { display:none !important }
+    .main { padding:0; max-width:none }
+    .card, .metric { background:#fff; border:1px solid #ccc; box-shadow:none }
+    .metric .value, .metric .label, th, td { color:#000 }
+    .badge { background:#eee; color:#000 }
+  }
+  @media (max-width:768px) {
+    #app { flex-direction:column }
+    .sidebar { width:100%; height:auto; position:fixed; bottom:0; left:0; right:0; flex-direction:row; padding:8px; border-top:1px solid var(--line); border-right:none; z-index:50 }
+    .sidebar .logo, .sidebar .spacer, .sidebar .logout span { display:none }
+    .nav-item { flex-direction:column; gap:4px; font-size:11px; padding:8px; justify-content:center }
+    .nav-item svg { width:22px; height:22px }
+    .main { padding:20px 16px 90px }
+    .page-header h2 { font-size:22px }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== CARREGANDO ===== -->
+<div id="loading">
+  <div class="moon-big"></div>
+  <h1>FEIRA DA LUA</h1>
+  <p>Sistema de Controle Financeiro Cósmico</p>
+  <div class="bar"><span id="load-bar"></span></div>
+  <div class="pct" id="load-pct">Conectando ao cosmos... 0%</div>
+</div>
+
+<!-- ===== LOGIN ===== -->
+<div id="login" class="hidden">
+  <div class="login-card">
+    <div class="logo">
+      <div class="moon"></div>
+      <div><h1>Feira da Lua</h1><p>Sistema de Controle Financeiro</p></div>
+    </div>
+    <h2>Acesso ao sistema</h2>
+    <p class="sub">Informe seu usuário e senha para entrar.</p>
+    <div class="field">
+      <label>Usuário</label>
+      <input id="login-user" type="text" placeholder="Feirante" autocomplete="username" />
+    </div>
+    <div class="field">
+      <label>Senha</label>
+      <div class="pass-wrap">
+        <input id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password" />
+        <button type="button" class="toggle-pass" onclick="toggleSenha()" aria-label="Mostrar ou ocultar senha" title="Mostrar/ocultar senha">
+          <svg id="olho-aberto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
+          </svg>
+          <svg id="olho-fechado" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" />
+            <path d="M1 1l22 22" />
+          </svg>
+        </button>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-block" onclick="doLogin()">Entrar</button>
+    <p class="login-hint">Acesso: <b>Feirante</b> / <b>Feirante123@</b></p>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="app" class="hidden">
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="moon" style="width:36px;height:36px"></div>
+      <div><h1 style="font-size:18px">Feira da Lua</h1><p style="font-size:11px">Controle de Feiras</p></div>
+    </div>
+    <button class="nav-item active" data-view="feiras" onclick="showView('feiras')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><path d="M9 22V12h6v10" /></svg><span>Feiras</span>
+    </button>
+    <button class="nav-item" data-view="feirantes" onclick="showView('feirantes')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87" /><path d="M16 3.13a4 4 0 010 7.75" /></svg><span>Feirantes</span>
+    </button>
+    <button class="nav-item" data-view="relatorios" onclick="showView('relatorios')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6" /><path d="M16 13H8M16 17H8M10 9H8" /></svg><span>Relatórios</span>
+    </button>
+    <div class="spacer"></div>
+    <button class="nav-item logout" onclick="logout()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg><span>Sair</span>
+    </button>
+  </aside>
+
+  <main class="main">
+    <!-- ================= FEIRAS ================= -->
+    <section id="view-feiras">
+      <div class="page-header">
+        <div>
+          <h2>Gestão de Feiras e Eventos</h2>
+          <p class="desc">Selecione uma feira existente ou crie um novo evento para controle de caixa e presenças.</p>
+        </div>
+        <button class="btn btn-primary no-print" onclick="openNovaFeira()">+ Nova Feira</button>
+      </div>
+
+      <div class="card" style="margin-bottom:24px">
+        <div class="row" style="align-items:flex-end; flex-wrap:wrap">
+          <div class="field" style="margin-bottom:0; min-width:240px">
+            <label>Selecione uma Feira</label>
+            <select id="feira-select" onchange="selectFeira(this.value)"></select>
+          </div>
+        </div>
+      </div>
+
+      <div id="feira-vazia" class="card empty">
+        <div class="big">🌙</div>
+        <p><b>Nenhuma Feira Selecionada</b><br>Crie uma nova feira ou selecione uma na lista acima para começar o controle.</p>
+      </div>
+
+      <div id="feira-detalhe" class="hidden">
+        <div class="card" style="margin-bottom:24px">
+          <h3 class="rel-title">FEIRA DA LUA — RELATÓRIO DA FEIRA</h3>
+          <p class="rel-sub">Data: <b id="rel-data">—</b></p>
+
+          <div class="metrics">
+            <div class="metric"><div class="label">Data da Feira</div><div class="value" id="m-data">—</div></div>
+            <div class="metric"><div class="label">Taxa Padrão</div><div class="value gold" id="m-taxa">R$ 0,00</div></div>
+            <div class="metric"><div class="label">Valor Total Feira</div><div class="value gold" id="m-total">R$ 0,00</div></div>
+            <div class="metric"><div class="label">Total Despesas</div><div class="value red" id="m-despesas">R$ 0,00</div></div>
+            <div class="metric"><div class="label">Saldo Líquido (Caixa)</div><div class="value green" id="m-saldo">R$ 0,00</div></div>
+            <div class="metric"><div class="label">Saldo em Dinheiro</div><div class="value" id="m-dinheiro">R$ 0,00</div><div class="hint">Taxas + Receitas Extras/Pós-Feira menos Despesas em Dinheiro</div></div>
+            <div class="metric"><div class="label">Saldo em Pix</div><div class="value blue" id="m-pix">R$ 0,00</div><div class="hint">Taxas + Receitas Extras/Pós-Feira menos Despesas via Pix</div></div>
+          </div>
+
+          <div class="mini-stats">
+            <span>Total Cadastrados: <b id="s-cad">0</b></span>
+            <span>Presentes: <b class="g" id="s-pres">0</b></span>
+            <span>Faltas: <b class="r" id="s-falta">0</b></span>
+            <span>Dinheiro Arrecadado: <b class="g" id="s-din">R$ 0,00</b></span>
+            <span>Pix Arrecadado: <b class="bl" id="s-pix">R$ 0,00</b></span>
+            <span>Pendente (Inadimplência): <b class="go" id="s-pend">R$ 0,00</b></span>
+          </div>
+
+          <div class="no-print" style="display:flex; gap:8px; flex-wrap:wrap">
+            <button class="btn btn-ghost" onclick="imprimirRelatorio()">Imprimir Relatório</button>
+            <button class="btn btn-ghost" onclick="openEditarFeira()">Editar Feira</button>
+            <button class="btn btn-danger" onclick="excluirFeira()">Excluir Feira</button>
+          </div>
+        </div>
+
+        <!-- LISTA DE FEIRANTES -->
+        <div class="card" style="margin-bottom:24px">
+          <div class="page-header" style="margin-bottom:16px">
+            <h3 style="font-size:18px">Lista de Feirantes &amp; Pagamentos</h3>
+            <div class="no-print" style="display:flex; gap:8px">
+              <button class="btn btn-ghost btn-sm" onclick="marcarTodos(true)">Todos os presentes</button>
+              <button class="btn btn-ghost btn-sm" onclick="marcarTodos(false)">Todos ausentes</button>
+              <button class="btn btn-green btn-sm" onclick="marcarTodosPagos()">Todos os pagamentos</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Feirante</th><th>Participação</th><th>Status / Forma de Pagamento</th><th>Valor Taxa (R$)</th><th>Ações / Situação</th></tr></thead>
+              <tbody id="feirantes-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- INADIMPLENTES -->
+        <div class="card" style="margin-bottom:24px">
+          <h3 style="font-size:18px; margin-bottom:16px">Resumo de Inadimplentes</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Feirante</th><th>Contato</th><th>Valor Pendente</th><th class="no-print">Cobrança</th></tr></thead>
+              <tbody id="inad-tbody"></tbody>
+            </table>
+          </div>
+          <div id="inad-vazio" class="empty" style="padding:24px 0">
+            <p>Nenhum inadimplente. 🎉</p>
+          </div>
+        </div>
+
+        <!-- PÓS-FEIRA -->
+        <div class="card" style="margin-bottom:24px">
+          <h3 style="font-size:18px; margin-bottom:8px">Pagamentos Pós-Feira (Quitações em Outra Data)</h3>
+          <p class="desc" style="margin-bottom:16px; color:var(--muted); font-size:13px">Lançamento de quitações de dívidas ou taxas recebidas fora do dia da feira para bater com o caderno de contabilidade.</p>
+          <div class="row no-print" style="margin-bottom:16px; align-items:flex-end; flex-wrap:wrap">
+            <div class="field" style="margin-bottom:0; min-width:180px"><label>Selecione o Feirante</label><select id="pos-feirante"></select></div>
+            <div class="field" style="margin-bottom:0"><label>Data Efetiva do PG</label><input id="pos-data" type="date" /></div>
+            <div class="field" style="margin-bottom:0"><label>Valor (R$)</label><input id="pos-valor" type="number" step="0.01" min="0" placeholder="0,00" /></div>
+            <div class="field" style="margin-bottom:0">
+              <label>Forma PG</label>
+              <div class="seg"><button id="pos-pix" class="on" onclick="setPosForma('pix')">Pix</button><button id="pos-din" onclick="setPosForma('dinheiro')">Dinheiro</button></div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="addPos()">Registrar</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Feirante (Quitação Pós-Feira)</th><th>Data Real PG</th><th>Forma Pagto</th><th>Valor Quitado</th><th class="no-print">Ações</th></tr></thead>
+              <tbody id="pos-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="row" style="align-items:flex-start; gap:24px; flex-wrap:wrap; margin-bottom:24px">
+          <!-- RECEITAS -->
+          <div class="card" style="flex:1; min-width:300px">
+            <h3 style="font-size:18px; margin-bottom:8px">Lançamento de Receitas Extras / Eventuais</h3>
+            <p class="desc" style="margin-bottom:16px; color:var(--muted); font-size:13px">Receitas extras arrecadadas na feira (ex: fundo de reserva, doações, vendas extras).</p>
+            <div class="row no-print" style="margin-bottom:16px; align-items:flex-end; flex-wrap:wrap">
+              <div class="field" style="margin-bottom:0"><label>Descrição</label><input id="rec-desc" type="text" placeholder="Ex: fundo de reserva" /></div>
+              <div class="field" style="margin-bottom:0"><label>Valor</label><input id="rec-valor" type="number" step="0.01" min="0" /></div>
+              <div class="field" style="margin-bottom:0">
+                <label>Forma Pagto</label>
+                <div class="seg"><button id="rec-pix" class="on" onclick="setRecForma('pix')">Pix</button><button id="rec-din" onclick="setRecForma('dinheiro')">Dinheiro</button></div>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="addReceita()">Adicionar</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Descrição da Receita Extra</th><th>Forma Pagto</th><th>Valor</th><th class="no-print">Ações</th></tr></thead>
+                <tbody id="rec-tbody"></tbody>
+              </table>
+            </div>
+            <div id="rec-vazio" class="empty hidden" style="padding:20px 0"><p>Nenhuma receita extra lançada.</p></div>
+          </div>
+
+          <!-- DESPESAS -->
+          <div class="card" style="flex:1; min-width:300px">
+            <h3 style="font-size:18px; margin-bottom:8px">Despesas da Feira</h3>
+            <p class="desc" style="margin-bottom:16px; color:var(--muted); font-size:13px">Detalhamento das despesas individuais e a forma de pagamento utilizada.</p>
+            <div class="row no-print" style="margin-bottom:16px; align-items:flex-end; flex-wrap:wrap">
+              <div class="field" style="margin-bottom:0"><label>Descrição</label><input id="desp-desc" type="text" placeholder="Ex: energia" /></div>
+              <div class="field" style="margin-bottom:0"><label>Valor</label><input id="desp-valor" type="number" step="0.01" min="0" /></div>
+              <div class="field" style="margin-bottom:0">
+                <label>Forma Pagto</label>
+                <div class="seg"><button id="desp-pix" class="on" onclick="setDespForma('pix')">Pix</button><button id="desp-din" onclick="setDespForma('dinheiro')">Dinheiro</button></div>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="addDespesa()">Adicionar</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Descrição da Despesa</th><th>Forma de Pagamento</th><th>Valor</th><th class="no-print">Ações</th></tr></thead>
+                <tbody id="desp-tbody"></tbody>
+              </table>
+            </div>
+            <div id="desp-vazio" class="empty hidden" style="padding:20px 0"><p>Nenhuma despesa lançada.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= FEIRANTES ================= -->
+    <section id="view-feirantes" class="hidden">
+      <div class="page-header">
+        <div>
+          <h2>Cadastro Geral de Feirantes</h2>
+          <p class="desc">Cadastre, edite ou remova os feirantes disponíveis para participar das feiras.</p>
+        </div>
+        <button class="btn btn-primary no-print" onclick="openNovoFeirante()">+ Novo Feirante</button>
+      </div>
+      <div class="card">
+        <h3 style="font-size:16px; margin-bottom:16px">Feirantes Cadastrados (<span id="qtd-cad">0</span>)</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nome</th><th>Telefone / Contato</th><th>Segmento / Produto</th><th class="no-print">Ações</th></tr></thead>
+            <tbody id="feirantes-cad-tbody"></tbody>
+          </table>
+        </div>
+        <div id="feirantes-vazio" class="empty hidden"><div class="big">👥</div><p>Nenhum feirante cadastrado ainda.</p></div>
+      </div>
+    </section>
+
+    <!-- ================= RELATÓRIOS ================= -->
+    <section id="view-relatorios" class="hidden">
+      <div class="page-header">
+        <div>
+          <h2>Relatório Geral de Feiras</h2>
+          <p class="desc">Prestação de contas consolidadas das feiras realizadas, saldos em Pix, Dinheiro e cobranças.</p>
+        </div>
+        <button class="btn btn-primary no-print" onclick="imprimirGeral()">Imprimir Relatório</button>
+      </div>
+
+      <h3 class="rel-title">FEIRA DA LUA — RELATÓRIO GERAL CONSOLIDADO</h3>
+      <p class="rel-sub">Histórico financeiro e prestação de contas</p>
+
+      <div class="metrics">
+        <div class="metric"><div class="label">Total de Feiras</div><div class="value" id="g-total">0</div></div>
+        <div class="metric"><div class="label">Total Dinheiro (Liq)</div><div class="value green" id="g-dinheiro">R$ 0,00</div></div>
+        <div class="metric"><div class="label">Total Pix (Liq)</div><div class="value blue" id="g-pix">R$ 0,00</div></div>
+        <div class="metric"><div class="label">Saldo Líquido Geral</div><div class="value gold" id="g-saldo">R$ 0,00</div></div>
+        <div class="metric"><div class="label">Total Pendente</div><div class="value red" id="g-pendente">R$ 0,00</div></div>
+      </div>
+
+      <!-- MATRIZ GERAL (ESTILO PLANILHA) -->
+      <div class="card" style="margin-bottom:24px">
+        <h3 style="font-size:18px; margin-bottom:8px">Painel Geral de Pagamentos (Matriz)</h3>
+        <p class="desc" style="margin-bottom:16px; color:var(--muted); font-size:13px">Visão consolidada de presenças e pagamentos por feirante em todas as feiras. Role para o lado para ver mais datas.</p>
+        <div class="matrix-wrap">
+          <table class="matrix-table" id="matrix-table">
+            <thead id="matrix-thead"></thead>
+            <tbody id="matrix-tbody"></tbody>
+            <tfoot id="matrix-tfoot"></tfoot>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:24px">
+        <h3 style="font-size:18px; margin-bottom:8px">Relatório de Pendentes para Cobrança</h3>
+        <p class="desc" style="margin-bottom:16px; color:var(--muted); font-size:13px">Lista consolidada de feirantes com pagamento pendente para cobrança imediata.</p>
+        <div class="mini-stats"><span>Total Pendente: <b class="r" id="pend-total">R$ 0,00</b></span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Feira (Data)</th><th>Feirante</th><th>Contato</th><th>Presença</th><th>Valor Pendente</th><th class="no-print">Ações / Cobrança</th></tr></thead>
+            <tbody id="pend-tbody"></tbody>
+          </table>
+        </div>
+        <div id="pend-vazio" class="empty hidden" style="padding:24px 0"><p>Nenhuma pendência de cobrança. 🎉</p></div>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size:18px; margin-bottom:16px">Extrato Detalhado de Feiras</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Data</th><th>Feirantes</th><th>Valor Total</th><th>Dinheiro</th><th>Pix</th><th>Despesas</th><th>Saldo</th><th class="no-print"></th></tr></thead>
+            <tbody id="extrato-tbody"></tbody>
+          </table>
+        </div>
+        <div id="extrato-vazio" class="empty hidden"><div class="big">📊</div><p>Nenhuma feira registrada ainda.</p></div>
+      </div>
+    </section>
+
+    <div class="footer">
+      Feira da Lua • Controle Financeiro Imersivo — Sistema de uso pessoal
+    </div>
+  </main>
+</div>
+
+<!-- ===== MODAIS ===== -->
+<div id="modal-feira" class="modal-overlay hidden">
+  <div class="modal">
+    <h3 id="modal-feira-titulo">Nova Feira</h3>
+    <div class="field"><label>Data da Feira</label><input id="feira-data" type="date" /></div>
+    <div class="field"><label>Valor Padrão da Taxa por Feirante (R$)</label><input id="feira-taxa" type="number" step="0.01" min="0" placeholder="0,00" /></div>
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-feira')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarFeira()">Salvar Feira</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-feirante" class="modal-overlay hidden">
+  <div class="modal">
+    <h3 id="modal-feirante-titulo">Novo Feirante</h3>
+    <div class="field"><label>Nome Completo</label><input id="feirante-nome" type="text" placeholder="Nome completo" /></div>
+    <div class="field"><label>Telefone / Contato</label><input id="feirante-tel" type="text" placeholder="(00) 00000-0000" /></div>
+    <div class="field"><label>Segmento / Produto</label><input id="feirante-seg" type="text" placeholder="Ex: Artesanato" /></div>
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-feirante')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarFeirante()">Salvar Feirante</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-aviso" class="modal-overlay hidden">
+  <div class="modal" style="max-width:380px">
+    <h3>Aviso</h3>
+    <p id="aviso-msg" style="color:var(--muted); font-size:14px">Mensagem aqui...</p>
+    <div class="actions"><button class="btn btn-primary" onclick="fecharModal('modal-aviso')">Entendido</button></div>
+  </div>
+</div>
+
+<script>
+/* ===== DADOS ===== */
+// Mudei a chave para v5 para forçar o carregamento dos dados novos que você mandou da planilha
+const DB_KEY = 'feira_da_lua_v5';
+let db = carregar();
+
+function carregar(){
+  const raw = localStorage.getItem(DB_KEY);
+  if (raw) return JSON.parse(raw);
+  
+  // DADOS INICIAIS (Puxados da sua imagem do Excel)
+  return {
+    feiras: [
+      { id: 1, data: '2026-10-15', taxaPadrao: 55, feirantes: [], pos: [], receitas: [], despesas: [] },
+      { id: 2, data: '2026-10-08', taxaPadrao: 55, feirantes: [], pos: [], receitas: [], despesas: [] },
+      { id: 3, data: '2026-10-01', taxaPadrao: 55, feirantes: [], pos: [], receitas: [], despesas: [] },
+      { id: 4, data: '2026-09-24', taxaPadrao: 55, feirantes: [], pos: [], receitas: [], despesas: [] },
+      { id: 5, data: '2026-09-17', taxaPadrao: 55, feirantes: [], pos: [], receitas: [], despesas: [] },
+      { id: 6, data: '2026-09-10', taxaPadrao: 55, feirantes: [], pos: [], receitas: [], despesas: [] },
+      { id: 7, data: '2026-09-03', taxaPadrao: 55, feirantes: [], pos: [], receitas: [], despesas: [] },
+      { id: 8, data: '2026-08-27', taxaPadrao: 55, feirantes: [], pos: [], receitas: [], despesas: [] },
+      { id: 9, data: '2026-08-20', taxaPadrao: 55, feirantes: [], pos: [], receitas: [], despesas: [] },
+      { id: 10, data: '2026-08-13', taxaPadrao: 55, feirantes: [], pos: [], receitas: [], despesas: [] },
+      { id: 11, data: '2026-08-06', taxaPadrao: 55, feirantes: [], pos: [], receitas: [], despesas: [] },
+      { id: 12, data: '2026-07-30', taxaPadrao: 55, feirantes: [], pos: [], receitas: [], despesas: [] },
+      { id: 13, data: '2026-07-23', taxaPadrao: 55, feirantes: [], pos: [], receitas: [], despesas: [] }
+    ],
+    feirantes: [
+      { id: 1, nome: 'Cachorro Quente', telefone: '', segmento: 'Lanches' },
+      { id: 2, nome: 'Pastel do Zé', telefone: '', segmento: 'Salgados' },
+      { id: 3, nome: 'Bebidas Geladas', telefone: '', segmento: 'Bebidas' },
+      { id: 4, nome: 'Doces Caseiros', telefone: '', segmento: 'Doces' },
+      { id: 5, nome: 'Crepe Francês', telefone: '', segmento: 'Lanches' },
+      { id: 6, nome: 'Tapioca', telefone: '', segmento: 'Lanches' },
+      { id: 7, nome: 'Churros', telefone: '', segmento: 'Doces' },
+      { id: 8, nome: 'Milho Verde', telefone: '', segmento: 'Comida' },
+      { id: 9, nome: 'Algodão Doce', telefone: '', segmento: 'Doces' },
+      { id: 10, nome: 'Artesanato', telefone: '', segmento: 'Arte' }
+    ],
+    feiraAtual: 1
+  };
+}
+function save(){ localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+
+// Injetar dados fictícios da planilha nas feiras
+(function injetarDadosPlanilha() {
+  if (db.feiras[0].feirantes.length > 0) return; // Se já tem dados, não faz nada
+  
+  const statusMap = {
+    1: [ // 15/10
+      { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' },
+      { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' },
+      { p: false, v: 55, st: 'red' }, { p: false, v: 87, st: 'yellow' }, { p: false, v: 55, st: 'cyan' },
+      { p: true, v: 110, st: 'green' }
+    ],
+    2: [ // 08/10
+      { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' },
+      { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' },
+      { p: true, v: 87, st: 'cyan' }, { p: true, v: 87, st: 'cyan' }, { p: true, v: 55, st: 'cyan' },
+      { p: true, v: 55, st: 'green' }
+    ],
+    3: [ // 01/10
+      { p: true, v: 32, st: 'yellow' }, { p: true, v: 32, st: 'yellow' }, { p: true, v: 32, st: 'yellow' },
+      { p: false, v: 0, st: 'falta' }, { p: false, v: 0, st: 'falta' }, { p: false, v: 0, st: 'falta' },
+      { p: false, v: 0, st: 'falta' }, { p: false, v: 0, st: 'falta' }, { p: false, v: 0, st: 'falta' },
+      { p: true, v: 32, st: 'green' }
+    ],
+    4: [ // 24/09 - TODOS CANCELADOS
+      { p: false, v: 0, st: 'cancelado' }, { p: false, v: 0, st: 'cancelado' }, { p: false, v: 0, st: 'cancelado' },
+      { p: false, v: 0, st: 'cancelado' }, { p: false, v: 0, st: 'cancelado' }, { p: false, v: 0, st: 'cancelado' },
+      { p: false, v: 0, st: 'cancelado' }, { p: false, v: 0, st: 'cancelado' }, { p: false, v: 0, st: 'cancelado' },
+      { p: false, v: 0, st: 'cancelado' }
+    ],
+    5: [ // 17/09
+      { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' },
+      { p: true, v: 110, st: 'cyan' }, { p: true, v: 110, st: 'cyan' }, { p: true, v: 55, st: 'cyan' },
+      { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' },
+      { p: true, v: 110, st: 'cyan' }
+    ],
+    6: [ // 10/09 - CANCELADOS
+      { p: false, v: 0, st: 'cancelado' }, { p: false, v: 0, st: 'cancelado' }, { p: false, v: 0, st: 'cancelado' },
+      { p: false, v: 0, st: 'cancelado' }, { p: false, v: 0, st: 'cancelado' }, { p: false, v: 0, st: 'cancelado' },
+      { p: false, v: 0, st: 'cancelado' }, { p: false, v: 0, st: 'cancelado' }, { p: false, v: 0, st: 'cancelado' },
+      { p: false, v: 0, st: 'cancelado' }
+    ],
+    7: [ // 03/09
+      { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' },
+      { p: true, v: 55, st: 'green' }, { p: true, v: 55, st: 'green' }, { p: true, v: 55, st: 'cyan' },
+      { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' },
+      { p: true, v: 55, st: 'green' }
+    ],
+    8: [ // 27/08
+      { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' },
+      { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' },
+      { p: true, v: 55, st: 'magenta' }, { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' },
+      { p: true, v: 55, st: 'green' }
+    ],
+    9: [ // 20/08
+      { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' },
+      { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' },
+      { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' },
+      { p: true, v: 55, st: 'green' }
+    ],
+    10: [ // 13/08
+      { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' },
+      { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'yellow' }, { p: true, v: 55, st: 'cyan' },
+      { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'cyan' }, { p: true, v: 55, st: 'yellow' },
+      { p: true, v: 55, st: 'green' }
+    ],
+    11: [ // 06/08
+      { p: true, v: 72, st: 'yellow' }, { p: true, v: 127, st: 'green' }, { p: true, v: 72, st: 'cyan' },
+      { p: true, v: 72, st: 'cyan' }, { p: true, v: 72, st: 'cyan' }, { p: true, v: 72, st: 'cyan' },
+      { p: true, v: 72, st: 'cyan' }, { p: true, v: 72, st: 'cyan' }, { p: true, v: 72, st: 'cyan' },
+      { p: true, v: 72, st: 'green' }
+    ],
+    12: [ // 30/07
+      { p: true, v: 110, st: 'cyan' }, { p: true, v: 110, st: 'cyan' }, { p: true, v: 110, st: 'cyan' },
+      { p: true, v: 110, st: 'cyan' }, { p: true, v: 110, st: 'cyan' }, { p: true, v: 110, st: 'cyan' },
+      { p: true, v: 110, st: 'yellow' }, { p: true, v: 110, st: 'cyan' }, { p: true, v: 110, st: 'yellow' },
+      { p: true, v: 110, st: 'green' }
+    ],
+    13: [ // 23/07
+      { p: true, v: 55, st: 'green' }, { p: true, v: 55, st: 'green' }, { p: true, v: 55, st: 'green' },
+      { p: true, v: 55, st: 'green' }, { p: true, v: 55, st: 'green' }, { p: true, v: 55, st: 'green' },
+      { p: true, v: 55, st: 'green' }, { p: true, v: 55, st: 'green' }, { p: true, v: 55, st: 'green' },
+      { p: true, v: 55, st: 'green' }
+    ]
+  };
+
+  db.feiras.forEach((f, index) => {
+    const feiraIndex = 13 - f.id; // Pega o array correto (já que as feiras estão em ordem decrescente no ID)
+    const statusFeira = statusMap[f.id] || [];
+    
+    f.feirantes = db.feirantes.map((fe, i) => {
+      const st = statusFeira[i] || { p: false, v: 0, st: 'falta' };
+      return {
+        feiranteId: fe.id,
+        presente: st.st !== 'falta' && st.st !== 'cancelado',
+        pago: st.p,
+        valor: st.v,
+        forma: 'pix',
+        _customStatus: st.st // Salva o status visual (cyan, yellow, red, etc)
+      };
+    });
+  });
+  save();
+})();
+
+const fmt = v => 'R$ ' + (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtData = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+
+/* ===== AVISO ===== */
+function aviso(msg){
+  document.getElementById('aviso-msg').textContent = msg;
+  document.getElementById('modal-aviso').classList.remove('hidden');
+}
+
+/* ===== CARREGANDO ===== */
+(function(){
+  let p = 0;
+  const bar = document.getElementById('load-bar');
+  const pct = document.getElementById('load-pct');
+  const t = setInterval(() => {
+    p += Math.random() * 18 + 7;
+    if (p >= 100) {
+      p = 100;
+      clearInterval(t);
+      setTimeout(() => {
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('login').classList.remove('hidden');
+      }, 350);
+    }
+    bar.style.width = p + '%';
+    pct.textContent = 'Conectando ao cosmos... ' + Math.floor(p) + '%';
+  }, 220);
+})();
+
+/* ===== LOGIN ===== */
+const USUARIO = 'Feirante';
+const SENHA = 'Feirante123@';
+
+function toggleSenha(){
+  const input = document.getElementById('login-pass');
+  const aberto = document.getElementById('olho-aberto');
+  const fechado = document.getElementById('olho-fechado');
+  const mostrar = input.type === 'password';
+  input.type = mostrar ? 'text' : 'password';
+  aberto.classList.toggle('hidden', mostrar);
+  fechado.classList.toggle('hidden', !mostrar);
+}
+function doLogin(){
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value;
+  if (u === USUARIO && p === SENHA){
+    document.getElementById('login').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    render();
+  } else {
+    aviso('Usuário ou senha inválida.');
+  }
+}
+function logout(){
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('login').classList.remove('hidden');
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-pass').type = 'password';
+  document.getElementById('olho-aberto').classList.remove('hidden');
+  document.getElementById('olho-fechado').classList.add('hidden');
+}
+
+/* ===== NAVEGAÇÃO ===== */
+function showView(v){
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.view === v));
+  ['feiras', 'feirantes', 'relatorios'].forEach(x => {
+    document.getElementById('view-' + x).classList.toggle('hidden', x !== v);
+  });
+  render();
+}
+function toast(msg){
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+function fecharModal(id){ document.getElementById(id).classList.add('hidden'); }
+
+/* ===== FEIRAS ===== */
+function openNovaFeira(){
+  document.getElementById('modal-feira-titulo').textContent = 'Nova Feira';
+  document.getElementById('feira-data').value = '';
+  document.getElementById('feira-taxa').value = '';
+  db._editFeiraId = null;
+  document.getElementById('modal-feira').classList.remove('hidden');
+}
+function openEditarFeira(){
+  const f = feiraAtual(); if (!f) return;
+  document.getElementById('modal-feira-titulo').textContent = 'Editar Feira';
+  document.getElementById('feira-data').value = f.data;
+  document.getElementById('feira-taxa').value = f.taxaPadrao;
+  db._editFeiraId = f.id;
+  document.getElementById('modal-feira').classList.remove('hidden');
+}
+function salvarFeira(){
+  const data = document.getElementById('feira-data').value;
+  const taxa = parseFloat(document.getElementById('feira-taxa').value) || 0;
+  if (!data){ aviso('Informe a data da feira.'); return; }
+  if (db._editFeiraId){
+    const f = db.feiras.find(x => x.id === db._editFeiraId);
+    f.data = data;
+    f.taxaPadrao = taxa;
+    f.feirantes.forEach(x => { if (x.valor === 0 || x.valor === undefined) x.valor = taxa; });
+  } else {
+    const f = {
+      id: Date.now(),
+      data,
+      taxaPadrao: taxa,
+      feirantes: db.feirantes.map(fe => ({ feiranteId: fe.id, presente: false, forma: 'pix', valor: taxa, pago: false })),
+      pos: [], receitas: [], despesas: []
+    };
+    db.feiras.push(f);
+    db.feiraAtual = f.id;
+  }
+  save();
+  fecharModal('modal-feira');
+  render();
+  toast('Feira salva.');
+}
+function excluirFeira(){
+  if (!confirm('Excluir esta feira e todos os seus lançamentos?')) return;
+  db.feiras = db.feiras.filter(x => x.id !== db.feiraAtual);
+  db.feiraAtual = null;
+  save();
+  render();
+}
+function selectFeira(id){ db.feiraAtual = id ? Number(id) : null; save(); render(); }
+
+/* ===== FEIRANTES ===== */
+function openNovoFeirante(){
+  document.getElementById('modal-feirante-titulo').textContent = 'Novo Feirante';
+  document.getElementById('feirante-nome').value = '';
+  document.getElementById('feirante-tel').value = '';
+  document.getElementById('feirante-seg').value = '';
+  db._editFeiranteId = null;
+  document.getElementById('modal-feirante').classList.remove('hidden');
+}
+function editarFeirante(id){
+  const f = db.feirantes.find(x => x.id === id);
+  document.getElementById('modal-feirante-titulo').textContent = 'Editar Feirante';
+  document.getElementById('feirante-nome').value = f.nome;
+  document.getElementById('feirante-tel').value = f.telefone || '';
+  document.getElementById('feirante-seg').value = f.segmento || '';
+  db._editFeiranteId = id;
+  document.getElementById('modal-feirante').classList.remove('hidden');
+}
+function salvarFeirante(){
+  const nome = document.getElementById('feirante-nome').value.trim();
+  if (!nome){ aviso('Informe o nome do feirante.'); return; }
+  const tel = document.getElementById('feirante-tel').value.trim();
+  const seg = document.getElementById('feirante-seg').value.trim();
+  if (db._editFeiranteId){
+    const f = db.feirantes.find(x => x.id === db._editFeiranteId);
+    f.nome = nome; f.telefone = tel; f.segmento = seg;
+  } else {
+    const f = { id: Date.now(), nome, telefone: tel, segmento: seg };
+    db.feirantes.push(f);
+    db.feiras.forEach(feira => feira.feirantes.push({ feiranteId: f.id, presente: false, forma: 'pix', valor: feira.taxaPadrao, pago: false }));
+  }
+  save();
+  fecharModal('modal-feirante');
+  render();
+  toast('Feirante salvo.');
+}
+function excluirFeirante(id){
+  if (!confirm('Remover este feirante?')) return;
+  db.feirantes = db.feirantes.filter(x => x.id !== id);
+  db.feiras.forEach(feira => feira.feirantes = feira.feirantes.filter(x => x.feiranteId !== id));
+  save();
+  render();
+}
+
+/* ===== AJUDANTES ===== */
+function feiraAtual(){ return db.feiras.find(x => x.id === db.feiraAtual); }
+function nomeFeirante(id){ const f = db.feirantes.find(x => x.id === id); return f ? f.nome : '—'; }
+function contatoFeirante(id){ const f = db.feirantes.find(x => x.id === id); return f ? (f.telefone || '—') : '—'; }
+
+function marcarTodos(presente){
+  const f = feiraAtual(); if (!f) return;
+  f.feirantes.forEach(x => x.presente = presente);
+  save(); render();
+}
+function marcarTodosPagos(){
+  const f = feiraAtual(); if (!f) return;
+  f.feirantes.filter(x => x.presente).forEach(x => x.pago = true);
+  save(); render();
+}
+function togglePresenca(i){ const f = feiraAtual(); f.feirantes[i].presente = !f.feirantes[i].presente; save(); render(); }
+function setForma(i, forma){ const f = feiraAtual(); f.feirantes[i].forma = forma; save(); render(); }
+function setValor(i, v){ const f = feiraAtual(); f.feirantes[i].valor = parseFloat(v) || 0; save(); render(); }
+function togglePago(i){ const f = feiraAtual(); f.feirantes[i].pago = !f.feirantes[i].pago; save(); render(); }
+
+let posForma = 'pix', recForma = 'pix', despForma = 'pix';
+function setPosForma(f){ posForma = f; document.getElementById('pos-pix').classList.toggle('on', f === 'pix'); document.getElementById('pos-din').classList.toggle('on', f === 'dinheiro'); }
+function setRecForma(f){ recForma = f; document.getElementById('rec-pix').classList.toggle('on', f === 'pix'); document.getElementById('rec-din').classList.toggle('on', f === 'dinheiro'); }
+function setDespForma(f){ despForma = f; document.getElementById('desp-pix').classList.toggle('on', f === 'pix'); document.getElementById('desp-din').classList.toggle('on', f === 'dinheiro'); }
+
+function addPos(){
+  const f = feiraAtual(); if (!f) return;
+  const feiranteId = Number(document.getElementById('pos-feirante').value);
+  const data = document.getElementById('pos-data').value;
+  const valor = parseFloat(document.getElementById('pos-valor').value) || 0;
+  if (!feiranteId || !data || valor <= 0){ aviso('Preencha feirante, data e valor.'); return; }
+  f.pos.push({ id: Date.now(), feiranteId, data, forma: posForma, valor });
+  document.getElementById('pos-valor').value = '';
+  save(); render();
+  toast('Quitação registrada.');
+}
+function addReceita(){
+  const f = feiraAtual(); if (!f) return;
+  const desc = document.getElementById('rec-desc').value.trim();
+  const valor = parseFloat(document.getElementById('rec-valor').value) || 0;
+  if (!desc || valor <= 0){ aviso('Preencha descrição e valor.'); return; }
+  f.receitas.push({ id: Date.now(), desc, forma: recForma, valor });
+  document.getElementById('rec-desc').value = '';
+  document.getElementById('rec-valor').value = '';
+  save(); render();
+}
+function addDespesa(){
+  const f = feiraAtual(); if (!f) return;
+  const desc = document.getElementById('desp-desc').value.trim();
+  const valor = parseFloat(document.getElementById('desp-valor').value) || 0;
+  if (!desc || valor <= 0){ aviso('Preencha descrição e valor.'); return; }
+  f.despesas.push({ id: Date.now(), desc, forma: despForma, valor });
+  document.getElementById('desp-desc').value = '';
+  document.getElementById('desp-valor').value = '';
+  save(); render();
+}
+function remover(arr, id){
+  const f = feiraAtual(); if (!f) return;
+  f[arr] = f[arr].filter(x => x.id !== id);
+  save(); render();
+}
+
+/* ===== CÁLCULOS ===== */
+function calcFeira(f){
+  const taxas = f.feirantes.filter(x => x.pago).reduce((s, x) => s + (x.valor || 0), 0);
+  const pendente = f.feirantes.filter(x => !x.pago && x.presente).reduce((s, x) => s + (x.valor || 0), 0);
+  const pos = f.pos.reduce((s, x) => s + x.valor, 0);
+  const rec = f.receitas.reduce((s, x) => s + x.valor, 0);
+  const desp = f.despesas.reduce((s, x) => s + x.valor, 0);
+  const receitaTotal = taxas + pos + rec;
+  const dinheiro = f.feirantes.filter(x => x.pago && x.forma === 'dinheiro').reduce((s, x) => s + x.valor, 0)
+    + f.pos.filter(x => x.forma === 'dinheiro').reduce((s, x) => s + x.valor, 0)
+    + f.receitas.filter(x => x.forma === 'dinheiro').reduce((s, x) => s + x.valor, 0)
+    - f.despesas.filter(x => x.forma === 'dinheiro').reduce((s, x) => s + x.valor, 0);
+  const pix = f.feirantes.filter(x => x.pago && x.forma === 'pix').reduce((s, x) => s + x.valor, 0)
+    + f.pos.filter(x => x.forma === 'pix').reduce((s, x) => s + x.valor, 0)
+    + f.receitas.filter(x => x.forma === 'pix').reduce((s, x) => s + x.valor, 0)
+    - f.despesas.filter(x => x.forma === 'pix').reduce((s, x) => s + x.valor, 0);
+  const arrDin = f.feirantes.filter(x => x.pago && x.forma === 'dinheiro').reduce((s, x) => s + x.valor, 0);
+  const arrPix = f.feirantes.filter(x => x.pago && x.forma === 'pix').reduce((s, x) => s + x.valor, 0);
+  return { taxas, pendente, pos, rec, desp, receitaTotal, dinheiro, pix, saldo: receitaTotal - desp, arrDin, arrPix };
+}
+
+/* ===== RENDER ===== */
+function render(){
+  renderFeiraSelect();
+  renderFeiraDetalhe();
+  renderFeirantesCad();
+  renderRelatorios();
+}
+function renderFeiraSelect(){
+  const sel = document.getElementById('feira-select');
+  sel.innerHTML = '<option value="">Selecione uma Feira...</option>' +
+    db.feiras.slice().sort((a, b) => b.data.localeCompare(a.data))
+      .map(f => `<option value="${f.id}" ${f.id === db.feiraAtual ? 'selected' : ''}>${fmtData(f.data)} — ${f.feirantes.filter(x => x.presente).length} presentes</option>`)
+      .join('');
+}
+
+function renderFeiraDetalhe(){
+  const f = feiraAtual();
+  document.getElementById('feira-detalhe').classList.toggle('hidden', !f);
+  document.getElementById('feira-vazia').classList.toggle('hidden', !!f);
+  if (!f) return;
+
+  const c = calcFeira(f);
+  document.getElementById('rel-data').textContent = fmtData(f.data);
+  document.getElementById('m-data').textContent = fmtData(f.data);
+  document.getElementById('m-taxa').textContent = fmt(f.taxaPadrao);
+  document.getElementById('m-total').textContent = fmt(c.receitaTotal);
+  document.getElementById('m-despesas').textContent = fmt(c.desp);
+  document.getElementById('m-saldo').textContent = fmt(c.saldo);
+  document.getElementById('m-dinheiro').textContent = fmt(c.dinheiro);
+  document.getElementById('m-pix').textContent = fmt(c.pix);
+
+  const pres = f.feirantes.filter(x => x.presente).length;
+  document.getElementById('s-cad').textContent = f.feirantes.length;
+  document.getElementById('s-pres').textContent = pres;
+  document.getElementById('s-falta').textContent = f.feirantes.length - pres;
+  document.getElementById('s-din').textContent = fmt(c.arrDin);
+  document.getElementById('s-pix').textContent = fmt(c.arrPix);
+  document.getElementById('s-pend').textContent = fmt(c.pendente);
+
+  // lista de feirantes
+  document.getElementById('feirantes-tbody').innerHTML = f.feirantes.map((x, i) => {
+    const fe = db.feirantes.find(y => y.id === x.feiranteId);
+    if (!fe) return '';
+    return `<tr>
+      <td><b>${fe.nome}</b><br><span style="color:var(--muted); font-size:12px">${fe.segmento || ''}</span></td>
+      <td><button class="badge ${x.presente ? 'presente' : 'falta'}" onclick="togglePresenca(${i})">${x.presente ? 'Presente' : 'Falta'}</button></td>
+      <td>
+        <div class="seg" style="max-width:160px">
+          <button class="${x.forma === 'pix' ? 'on' : ''}" onclick="setForma(${i},'pix')">Pix</button>
+          <button class="${x.forma === 'dinheiro' ? 'on' : ''}" onclick="setForma(${i},'dinheiro')">Dinheiro</button>
+        </div>
+      </td>
+      <td><input type="number" step="0.01" min="0" value="${x.valor}" onchange="setValor(${i}, this.value)" style="width:100px; background:var(--bg2); border:1px solid var(--line); border-radius:8px; padding:8px; color:var(--text)" /></td>
+      <td class="no-print"><button class="badge ${x.pago ? 'presente' : 'pendente'}" onclick="togglePago(${i})">${x.pago ? 'Pago' : 'Pendente'}</button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="5" style="color:var(--muted)">Nenhum feirante cadastrado. Vá em "Feirantes" para cadastrar.</td></tr>';
+
+  // inadimplentes
+  const inad = f.feirantes.filter(x => !x.pago && x.presente);
+  document.getElementById('inad-vazio').classList.toggle('hidden', inad.length > 0);
+  document.getElementById('inad-tbody').innerHTML = inad.map(x => {
+    const fe = db.feirantes.find(y => y.id === x.feiranteId);
+    const idx = f.feirantes.indexOf(x);
+    return `<tr>
+      <td><b>${fe ? fe.nome : '—'}</b></td>
+      <td>${fe && fe.telefone ? fe.telefone : '—'}</td>
+      <td>${fmt(x.valor)}</td>
+      <td class="no-print"><button class="btn btn-green btn-sm" onclick="togglePago(${idx})">Marcar como pago</button></td>
+    </tr>`;
+  }).join('');
+
+  // pós-feira
+  document.getElementById('pos-feirante').innerHTML = '<option value="">Selecione o Feirante...</option>' +
+    db.feirantes.map(fe => `<option value="${fe.id}">${fe.nome}</option>`).join('');
+  document.getElementById('pos-tbody').innerHTML = f.pos.map(x => `<tr>
+    <td>${nomeFeirante(x.feiranteId)}</td><td>${fmtData(x.data)}</td>
+    <td><span class="badge ${x.forma}">${x.forma === 'pix' ? 'Pix' : 'Dinheiro'}</span></td>
+    <td>${fmt(x.valor)}</td>
+    <td class="no-print"><button class="icon-btn danger" onclick="remover('pos', ${x.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg></button></td>
+  </tr>`).join('') || '<tr><td colspan="5" style="color:var(--muted)">Nenhum pagamento pós-feira lançado.</td></tr>';
+
+  // receitas
+  const recVazio = f.receitas.length === 0;
+  document.getElementById('rec-vazio').classList.toggle('hidden', !recVazio);
+  document.getElementById('rec-tbody').innerHTML = recVazio ? '' : f.receitas.map(x => `<tr>
+    <td>${x.desc}</td><td><span class="badge ${x.forma}">${x.forma === 'pix' ? 'Pix' : 'Dinheiro'}</span></td>
+    <td>${fmt(x.valor)}</td>
+    <td class="no-print"><button class="icon-btn danger" onclick="remover('receitas', ${x.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg></button></td>
+  </tr>`).join('');
+
+  // despesas
+  const despVazio = f.despesas.length === 0;
+  document.getElementById('desp-vazio').classList.toggle('hidden', !despVazio);
+  document.getElementById('desp-tbody').innerHTML = despVazio ? '' : f.despesas.map(x => `<tr>
+    <td>${x.desc}</td><td><span class="badge ${x.forma}">${x.forma === 'pix' ? 'Pix' : 'Dinheiro'}</span></td>
+    <td>${fmt(x.valor)}</td>
+    <td class="no-print"><button class="icon-btn danger" onclick="remover('despesas', ${x.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg></button></td>
+  </tr>`).join('');
+}
+
+function renderFeirantesCad(){
+  const tb = document.getElementById('feirantes-cad-tbody');
+  document.getElementById('qtd-cad').textContent = db.feirantes.length;
+  document.getElementById('feirantes-vazio').classList.toggle('hidden', db.feirantes.length > 0);
+  tb.innerHTML = db.feirantes.map(f => `<tr>
+    <td><b>${f.nome}</b></td><td>${f.telefone || '—'}</td><td>${f.segmento || '—'}</td>
+    <td class="no-print" style="white-space:nowrap">
+      <button class="icon-btn" onclick="editarFeirante(${f.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg></button>
+      <button class="icon-btn danger" onclick="excluirFeirante(${f.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg></button>
+    </td>
+  </tr>`).join('');
+}
+
+function renderRelatorios(){
+  let din = 0, pix = 0, saldo = 0, pendTotal = 0;
+  const pendentes = [];
+
+  db.feiras.forEach(f => {
+    const c = calcFeira(f);
+    din += c.dinheiro; pix += c.pix; saldo += c.saldo;
+    f.feirantes.filter(x => !x.pago && x.presente).forEach(x => {
+      const fe = db.feirantes.find(y => y.id === x.feiranteId);
+      pendTotal += x.valor || 0;
+      pendentes.push({ data: f.data, nome: fe ? fe.nome : '—', tel: fe ? fe.telefone : '', presente: x.presente, valor: x.valor });
+    });
+  });
+
+  document.getElementById('g-total').textContent = db.feiras.length;
+  document.getElementById('g-dinheiro').textContent = fmt(din);
+  document.getElementById('g-pix').textContent = fmt(pix);
+  document.getElementById('g-saldo').textContent = fmt(saldo);
+  document.getElementById('g-pendente').textContent = fmt(pendTotal);
+  document.getElementById('pend-total').textContent = fmt(pendTotal);
+
+  document.getElementById('pend-vazio').classList.toggle('hidden', pendentes.length > 0);
+  document.getElementById('pend-tbody').innerHTML = pendentes.map(p => `<tr>
+    <td>${fmtData(p.data)}</td><td><b>${p.nome}</b></td><td>${p.tel || '—'}</td>
+    <td><span class="badge ${p.presente ? 'presente' : 'falta'}">${p.presente ? 'Presente' : '—'}</span></td>
+    <td>${fmt(p.valor)}</td>
+    <td class="no-print"><button class="btn btn-green btn-sm" onclick="cobrar('${p.nome}','${p.tel || ''}',${p.valor},'${p.data}')">Cobrar</button></td>
+  </tr>`).join('');
+
+  document.getElementById('extrato-vazio').classList.toggle('hidden', db.feiras.length > 0);
+  document.getElementById('extrato-tbody').innerHTML = db.feiras.slice().sort((a, b) => b.data.localeCompare(a.data)).map(f => {
+    const c = calcFeira(f);
+    const pres = f.feirantes.filter(x => x.presente).length;
+    return `<tr>
+      <td>${fmtData(f.data)}</td><td>${pres}/${f.feirantes.length}</td>
+      <td>${fmt(c.receitaTotal)}</td><td>${fmt(c.dinheiro)}</td><td>${fmt(c.pix)}</td>
+      <td>${fmt(c.desp)}</td><td><b>${fmt(c.saldo)}</b></td>
+      <td class="no-print"><button class="icon-btn" onclick="selectFeiraEIr('${f.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></td>
+    </tr>`;
+  }).join('');
+
+  renderMatriz();
+}
+
+/* ===== RENDERIZAR A MATRIZ (PLANILHA) COM CORES EXATAS ===== */
+function renderMatriz() {
+  const feiras = db.feiras.slice().sort((a,b) => a.data.localeCompare(b.data)); // Ordem crescente (esquerda p/ direita)
+  const feirantes = db.feirantes.slice().sort((a,b) => a.nome.localeCompare(b.nome));
+  
+  const thead = document.getElementById('matrix-thead');
+  const tbody = document.getElementById('matrix-tbody');
+  const tfoot = document.getElementById('matrix-tfoot');
+
+  if (feiras.length === 0 || feirantes.length === 0) {
+    thead.innerHTML = '';
+    tbody.innerHTML = '<tr><td colspan="100" style="text-align:center;color:var(--muted);padding:24px;">Nenhum dado cadastrado para gerar a matriz.</td></tr>';
+    tfoot.innerHTML = '';
+    return;
+  }
+
+  // Cabeçalho: Nome do Feirante + Datas das Feiras
+  let thHTML = '<tr><th style="text-align:left">Feirante</th>';
+  feiras.forEach(f => {
+    thHTML += `<th>${fmtData(f.data)}</th>`;
+  });
+  thHTML += '</tr>';
+  thead.innerHTML = thHTML;
+
+  // Corpo: Linhas por Feirante
+  let tbHTML = '';
+  feirantes.forEach(fe => {
+    tbHTML += `<tr><td><b>${fe.nome}</b></td>`;
+    feiras.forEach(f => {
+      const reg = f.feirantes.find(x => x.feiranteId === fe.id);
+      
+      // Mapear a classe de cor correta
+      let cls = 'mx-falta';
+      let txt = 'FALTA';
+      let subTxt = '';
+      
+      if (reg) {
+        if (reg._customStatus === 'cancelado') { cls = 'mx-cancelado'; txt = 'CANCELADO'; }
+        else if (reg._customStatus === 'atestado') { cls = 'mx-atestado'; txt = 'ATESTADO'; }
+        else if (reg.pago) { 
+          cls = 'mx-pago'; 
+          txt = 'PAGO'; 
+          if (reg.valor > 0) subTxt = `<br><small>${fmt(reg.valor)}</small>`;
+        }
+        else if (reg.presente) { 
+          if (reg._customStatus === 'yellow') cls = 'mx-pendente';
+          else if (reg._customStatus === 'cyan') cls = 'mx-cyan';
+          else cls = 'mx-pendente'; // padrão
+          txt = fmt(reg.valor); 
+        }
+      }
+      
+      tbHTML += `<td class="${cls}">${txt}${subTxt}</td>`;
+    });
+    tbHTML += '</tr>';
+  });
+  tbody.innerHTML = tbHTML;
+
+  // Rodapé: Totais por Feira (Coluna)
+  let tfHTML = '<tr><td><b>TOTAIS DA FEIRA</b></td>';
+  feiras.forEach(f => {
+    const c = calcFeira(f);
+    
+    // Calcular o total esperado (o que deveria ter sido arrecadado considerando os presentes)
+    let totalEsperado = 0;
+    f.feirantes.forEach(x => {
+      if (x.presente) totalEsperado += (x.valor || 0);
+    });
+
+    // Formatar igual à sua imagem
+    tfHTML += `<td style="background:#a5d6a7; color:#000; font-size:12px;">
+      ${fmt(totalEsperado)}
+    </td>`;
+  });
+  tfHTML += '</tr>';
+  tfoot.innerHTML = tfHTML;
+}
+
+function selectFeiraEIr(id){ showView('feiras'); selectFeira(Number(id)); }
+
+function cobrar(nome, tel, valor, data){
+  const msg = `Olá ${nome}! Passando para lembrar da taxa da Feira da Lua do dia ${fmtData(data)} no valor de ${fmt(valor)}. Obrigado!`;
+  const limpo = (tel || '').replace(/\D/g, '');
+  const wpp = limpo ? (limpo.length <= 11 ? '55' + limpo : limpo) : '';
+  const link = wpp ? ('https://wa.me/' + wpp + '?text=' + encodeURIComponent(msg)) : '(cadastre um telefone para o feirante)';
+  const texto = `${msg}\n\nAbrir cobrança no WhatsApp:\n${link}`;
+  navigator.clipboard?.writeText(msg);
+  aviso(texto);
+}
+
+/* ===== IMPRESSÃO ===== */
+function imprimirRelatorio(){
+  const f = feiraAtual(); if (!f) return;
+  const c = calcFeira(f);
+  const w = window.open('', '_blank', 'width=900,height=700');
+  w.document.write(`<html><head><title>Relatório da Feira</title>
+  <style>body{font-family:Arial, sans-serif;padding:32px;color:#111}
+  h1{font-size:22px;margin:0}h2{font-size:15px;color:#555;margin:4px 0 24px}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+  .box{border:1px solid #ccc;border-radius:8px;padding:10px}
+  .box .l{font-size:10px;color:#666;text-transform:uppercase}.box .v{font-size:17px;font-weight:bold;margin-top:4px}
+  table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px}
+  th,td{border:1px solid #ccc;padding:7px;text-align:left}th{background:#f5f5f5}
+  h3{font-size:14px;margin:20px 0 8px;border-bottom:1px solid #999;padding-bottom:4px}</style></head><body>
+  <h1>FEIRA DA LUA — RELATÓRIO DA FEIRA</h1><h2>Data: ${fmtData(f.data)} | Taxa Padrão: ${fmt(f.taxaPadrao)}</h2>
+  <div class="grid">
+    <div class="box"><div class="l">Valor Total Feira</div><div class="v">${fmt(c.receitaTotal)}</div></div>
+    <div class="box"><div class="l">Despesas Totais</div><div class="v">${fmt(c.desp)}</div></div>
+    <div class="box"><div class="l">Saldo Líquido</div><div class="v">${fmt(c.saldo)}</div></div>
+    <div class="box"><div class="l">Saldo Dinheiro</div><div class="v">${fmt(c.dinheiro)}</div></div>
+    <div class="box"><div class="l">Saldo Pix</div><div class="v">${fmt(c.pix)}</div></div>
+    <div class="box"><div class="l">Presentes</div><div class="v">${f.feirantes.filter(x => x.presente).length}</div></div>
+    <div class="box"><div class="l">Faltas</div><div class="v">${f.feirantes.length - f.feirantes.filter(x => x.presente).length}</div></div>
+    <div class="box"><div class="l">Pendente</div><div class="v">${fmt(c.pendente)}</div></div>
+  </div>
+  <h3>Lista de Feirantes &amp; Pagamentos</h3>
+  <table><tr><th>Feirante</th><th>Participação</th><th>Forma</th><th>Valor Taxa</th><th>Situação</th></tr>
+  ${f.feirantes.map(x => `<tr><td>${nomeFeirante(x.feiranteId)}</td><td>${x.presente ? 'Presente' : 'Falta'}</td><td>${x.forma === 'pix' ? 'Pix' : 'Dinheiro'}</td><td>${fmt(x.valor)}</td><td>${x.pago ? 'Pago' : 'Pendente'}</td></tr>`).join('')}
+  </table>
+  <h3>Resumo de Inadimplentes</h3>
+  <table><tr><th>Feirante</th><th>Contato</th><th>Valor Pendente</th></tr>
+  ${f.feirantes.filter(x => !x.pago && x.presente).map(x => `<tr><td>${nomeFeirante(x.feiranteId)}</td><td>${contatoFeirante(x.feiranteId)}</td><td>${fmt(x.valor)}</td></tr>`).join('') || '<tr><td colspan="3">Nenhum inadimplente.</td></tr>'}
+  </table>
+  <h3>Pagamentos Pós-Feira</h3>
+  <table><tr><th>Feirante</th><th>Data</th><th>Forma</th><th>Valor</th></tr>
+  ${f.pos.map(x => `<tr><td>${nomeFeirante(x.feiranteId)}</td><td>${fmtData(x.data)}</td><td>${x.forma}</td><td>${fmt(x.valor)}</td></tr>`).join('') || '<tr><td colspan="4">—</td></tr>'}
+  </table>
+  <h3>Receitas Extras</h3>
+  <table><tr><th>Descrição</th><th>Forma</th><th>Valor</th></tr>
+  ${f.receitas.map(x => `<tr><td>${x.desc}</td><td>${x.forma}</td><td>${fmt(x.valor)}</td></tr>`).join('') || '<tr><td colspan="3">Nenhuma receita extra lançada.</td></tr>'}
+  </table>
+  <h3>Despesas</h3>
+  <table><tr><th>Descrição</th><th>Forma</th><th>Valor</th></tr>
+  ${f.despesas.map(x => `<tr><td>${x.desc}</td><td>${x.forma}</td><td>${fmt(x.valor)}</td></tr>`).join('') || '<tr><td colspan="3">Nenhuma despesa lançada.</td></tr>'}
+  </table>
+  <script>window.onload=()=>window.print()<\/script></body></html>`);
+  w.document.close();
+}
+
+function imprimirGeral(){
+  let din = 0, pix = 0, saldo = 0, pend = 0;
+  const linhas = db.feiras.slice().sort((a, b) => b.data.localeCompare(a.data)).map(f => {
+    const c = calcFeira(f);
+    din += c.dinheiro; pix += c.pix; saldo += c.saldo; pend += c.pendente;
+    return `<tr><td>${fmtData(f.data)}</td><td>${fmt(c.receitaTotal)}</td><td>${fmt(c.dinheiro)}</td><td>${fmt(c.pix)}</td><td>${fmt(c.desp)}</td><td>${fmt(c.saldo)}</td></tr>`;
+  }).join('');
+  const pendRows = [];
+  db.feiras.forEach(f => f.feirantes.filter(x => !x.pago && x.presente).forEach(x => {
+    const fe = db.feirantes.find(y => y.id === x.feiranteId);
+    pendRows.push(`<tr><td>${fmtData(f.data)}</td><td>${fe ? fe.nome : '—'}</td><td>${fe && fe.telefone ? fe.telefone : '—'}</td><td>${fmt(x.valor)}</td></tr>`);
+  }));
+  const w = window.open('', '_blank', 'width=900,height=700');
+  w.document.write(`<html><head><title>Relatório Geral</title>
+  <style>body{font-family:Arial, sans-serif;padding:32px;color:#111}
+  h1{font-size:22px;margin:0}h2{font-size:15px;color:#555;margin:4px 0 24px}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+  .box{border:1px solid #ccc;border-radius:8px;padding:10px}
+  .box .l{font-size:10px;color:#666;text-transform:uppercase}.box .v{font-size:17px;font-weight:bold;margin-top:4px}
+  table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px}
+  th,td{border:1px solid #ccc;padding:7px;text-align:left}th{background:#f5f5f5}
+  h3{font-size:14px;margin:20px 0 8px;border-bottom:1px solid #999;padding-bottom:4px}</style></head><body>
+  <h1>FEIRA DA LUA — RELATÓRIO GERAL CONSOLIDADO</h1><h2>Histórico financeiro e prestação de contas</h2>
+  <div class="grid">
+    <div class="box"><div class="l">Total de Feiras</div><div class="v">${db.feiras.length}</div></div>
+    <div class="box"><div class="l">Dinheiro Total</div><div class="v">${fmt(din)}</div></div>
+    <div class="box"><div class="l">Total de Pix</div><div class="v">${fmt(pix)}</div></div>
+    <div class="box"><div class="l">Saldo Líquido Geral</div><div class="v">${fmt(saldo)}</div></div>
+    <div class="box"><div class="l">Total Pendente</div><div class="v">${fmt(pend)}</div></div>
+  </div>
+  <h3>Extrato Detalhado de Feiras</h3>
+  <table><tr><th>Data</th><th>Valor Total</th><th>Dinheiro</th><th>Pix</th><th>Despesas</th><th>Saldo</th></tr>${linhas}</table>
+  <h3>Relatório de Pendentes para Cobrança</h3>
+  <table><tr><th>Feira (Data)</th><th>Feirante</th><th>Contato</th><th>Valor Pendente</th></tr>${pendRows.join('') || '<tr><td colspan="4">Nenhuma pendência.</td></tr>'}</table>
+  <script>window.onload=()=>window.print()<\/script></body></html>`);
+  w.document.close();
+}
+
+/* ===== INICIALIZAÇÃO ===== */
+document.getElementById('login-user').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+</script>
+</body>
+</html>
